@@ -3,7 +3,8 @@
     import javafx.collections.FXCollections;
     import javafx.collections.ObservableList;
     import javafx.geometry.Insets;
-    import javafx.scene.Scene;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
     import javafx.scene.chart.LineChart;
     import javafx.scene.chart.NumberAxis;
     import javafx.scene.chart.XYChart;
@@ -224,103 +225,126 @@
         private void showWaterUsageTracker(Stage primaryStage) {
             primaryStage.setTitle("Community Water Usage Tracker");
         
+            // Labels and input fields
             Label householdLabel = new Label("Household Name:");
+            householdLabel.setStyle("-fx-font-size: 14px;");
             TextField householdField = new TextField();
+            householdField.setStyle("-fx-font-size: 14px;");
+        
             Label dateLabel = new Label("Date:");
+            dateLabel.setStyle("-fx-font-size: 14px;");
             DatePicker datePicker = new DatePicker();
+            datePicker.setStyle("-fx-font-size: 14px;");
+        
             Label consumptionLabel = new Label("Consumption (liters):");
+            consumptionLabel.setStyle("-fx-font-size: 14px;");
             TextField consumptionField = new TextField();
+            consumptionField.setStyle("-fx-font-size: 14px;");
+        
+            // Buttons
             Button addButton = new Button("Add Record");
+            addButton.setStyle("-fx-font-size: 14px;");
             Button deleteButton = new Button("Delete Record");
+            deleteButton.setStyle("-fx-font-size: 14px;");
             Button viewGraphButton = new Button("Show Graph");
-            Button changeUserButton = new Button("Change User"); // New Change User button
-
+            viewGraphButton.setStyle("-fx-font-size: 14px;");
+            Button changeUserButton = new Button("Change User");
+            changeUserButton.setStyle("-fx-font-size: 14px;");
+        
+            // Average and Total Labels
             Label avgConsumptionLabel = new Label("Average Consumption (liters): ");
+            avgConsumptionLabel.setStyle("-fx-font-size: 14px;");
             Label avgCostLabel = new Label("Average Cost (Rupees): ");
+            avgCostLabel.setStyle("-fx-font-size: 14px;");
+            Label totalConsumptionLabel = new Label("Total Consumption (liters): ");
+            totalConsumptionLabel.setStyle("-fx-font-size: 14px;");
+            Label totalCostLabel = new Label("Total Cost (Rupees): ");
+            totalCostLabel.setStyle("-fx-font-size: 14px;");
         
             // Create a GridPane for input fields and buttons
             GridPane grid = new GridPane();
-            grid.setPadding(new Insets(10, 10, 10, 10));
+            grid.setPadding(new Insets(15, 20, 15, 20));
             grid.setVgap(10);
             grid.setHgap(10);
         
+            // Align the labels and input fields in the grid
             grid.add(householdLabel, 0, 0);
             grid.add(householdField, 1, 0);
             grid.add(dateLabel, 0, 1);
             grid.add(datePicker, 1, 1);
             grid.add(consumptionLabel, 0, 2);
             grid.add(consumptionField, 1, 2);
+        
+            // Align buttons in the grid
             grid.add(addButton, 0, 3);
             grid.add(deleteButton, 1, 3);
-            grid.add(viewGraphButton, 2, 3);
-            grid.add(changeUserButton, 3, 3); // Position Change User button next to Show Graph
+            grid.add(changeUserButton, 2, 3);
         
+            // Set button actions
             addButton.setOnAction(e -> addRecord(householdField.getText(), datePicker.getValue(), consumptionField.getText()));
             deleteButton.setOnAction(e -> deleteSelectedRecord());
             viewGraphButton.setOnAction(e -> showUsageGraph());
-            changeUserButton.setOnAction(e -> showLoginScreen(primaryStage)); // Action for Change User button
+            changeUserButton.setOnAction(e -> showLoginScreen(primaryStage));
         
+            // Setup table view
             tableView = new TableView<>();
             setupTableView();
         
-            VBox vbox = new VBox(grid, tableView);
-            vbox.setSpacing(10);
-
-            VBox avgBox = new VBox(5, avgConsumptionLabel, avgCostLabel); // Spacing between the labels
-            avgBox.setPadding(new Insets(10, 0, 0, 0)); // Optional padding at the top
+            // VBox for table and labels, with spacing for layout
+            VBox tableWithGraph = new VBox(10, tableView, viewGraphButton, avgConsumptionLabel, avgCostLabel, totalConsumptionLabel, totalCostLabel);
+            tableWithGraph.setPadding(new Insets(20, 0, 20, 0));
+            tableWithGraph.setAlignment(Pos.TOP_LEFT);
         
-            // Combine the two VBoxes (one for inputs, one for averages)
-            VBox mainBox = new VBox(vbox, avgBox);
-            Scene scene = new Scene(mainBox, 600, 400);
+            // Remove outline and make the table more spacious
+            tableView.setStyle("-fx-padding: 10; -fx-border-width: 0; -fx-background-color: transparent;"); // Removes black outline
+            tableView.setFixedCellSize(28);  // Adjust cell size for more spacious rows
+            tableView.setPrefHeight(28 * 7 + 28);  // 7 rows + header height
+        
+            // Combine grid and tableWithGraph in a main layout
+            VBox mainLayout = new VBox(15, grid, tableWithGraph);
+            mainLayout.setPadding(new Insets(20, 20, 20, 20));
+            mainLayout.setAlignment(Pos.TOP_LEFT);
+        
+            Scene scene = new Scene(mainLayout, 750, 650);
             primaryStage.setScene(scene);
             primaryStage.show();
         
-            // Load records and update averages
+            // Load records and update averages/totals
             viewRecords();
-            
-            // Update average consumption and cost
-            updateAverageConsumptionAndCost(avgConsumptionLabel, avgCostLabel);
+            updateAverageAndTotalConsumptionAndCost(avgConsumptionLabel, avgCostLabel, totalConsumptionLabel, totalCostLabel);
         }
         
-        private void updateAverageConsumptionAndCost(Label avgConsumptionLabel, Label avgCostLabel) {
-            ObservableList<WaterUsageRecord> records = tableView.getItems();
-        
-            if (records.isEmpty()) {
-                avgConsumptionLabel.setText("Average Consumption (liters): N/A");
-                avgCostLabel.setText("Average Cost (Rupees): N/A");
+        private void updateAverageAndTotalConsumptionAndCost(Label avgConsumptionLabel, Label avgCostLabel, Label totalConsumptionLabel, Label totalCostLabel) {
+            // Ensure we have records to process
+            if (tableView.getItems().isEmpty()) {
+                avgConsumptionLabel.setText("Average Consumption (liters): 0");
+                avgCostLabel.setText("Average Cost (Rupees): 0");
+                totalConsumptionLabel.setText("Total Consumption (liters): 0");
+                totalCostLabel.setText("Total Cost (Rupees): 0");
                 return;
             }
         
-            // Calculate total consumption and total cost
-            float totalConsumption = 0;
+            // Initialize variables to accumulate total consumption and cost
+            double totalConsumption = 0;
             double totalCost = 0;
         
-            for (WaterUsageRecord record : records) {
+            // Iterate over the records in tableView to accumulate totals
+            for (WaterUsageRecord record : tableView.getItems()) {
                 totalConsumption += record.getConsumptionAmount();
                 totalCost += record.getConsumptionAmount() * WATER_COST_PER_LITER;
             }
         
             // Calculate averages
-            float averageConsumption = totalConsumption / records.size();
-            double averageCost = totalCost / records.size();
+            double avgConsumption = totalConsumption / tableView.getItems().size();
+            double avgCost = totalCost / tableView.getItems().size();
         
-            // Update the labels with the calculated values
-            avgConsumptionLabel.setText(
-                String.format(
-                    "Average Consumption = Total Consumption / Total Entries\n" + 
-                    "Average Consumption = %.2f", 
-                    averageConsumption
-                )
-            );
-            avgCostLabel.setText(
-                String.format(
-                    "Average Cost = Total Cost / Total Entries\n" + 
-                    "Average Cost (Rupees): %.2f", 
-                    averageCost
-                )
-            );
-            
+            // Update labels with calculated values
+            avgConsumptionLabel.setText(String.format("Average Consumption (liters): %.2f", avgConsumption));
+            avgCostLabel.setText(String.format("Average Cost (Rupees): %.2f", avgCost));
+            totalConsumptionLabel.setText(String.format("Total Consumption (liters): %.2f", totalConsumption));
+            totalCostLabel.setText(String.format("Total Cost (Rupees): %.2f", totalCost));
         }
+        
         
         private void viewRecords() {
             ObservableList<WaterUsageRecord> records = FXCollections.observableArrayList();
@@ -351,29 +375,30 @@
             // Create and configure table columns
             TableColumn<WaterUsageRecord, String> householdColumn = new TableColumn<>("Household Name");
             householdColumn.setCellValueFactory(data -> data.getValue().householdNameProperty());
-            householdColumn.setPrefWidth(120); // Set preferred width
+            householdColumn.setPrefWidth(180); // Adjusted width for spacious layout
+            householdColumn.setStyle("-fx-font-size: 14px;");
         
             TableColumn<WaterUsageRecord, LocalDate> dateColumn = new TableColumn<>("Date");
             dateColumn.setCellValueFactory(data -> data.getValue().dateProperty());
-            dateColumn.setPrefWidth(80); // Set preferred width
+            dateColumn.setPrefWidth(120);
+            dateColumn.setStyle("-fx-font-size: 14px;");
         
             TableColumn<WaterUsageRecord, Float> consumptionColumn = new TableColumn<>("Consumption (liters)");
             consumptionColumn.setCellValueFactory(data -> data.getValue().consumptionAmountProperty().asObject());
-            consumptionColumn.setPrefWidth(140); // Set preferred width
+            consumptionColumn.setPrefWidth(170);
+            consumptionColumn.setStyle("-fx-font-size: 14px;");
         
             TableColumn<WaterUsageRecord, Double> costColumn = new TableColumn<>("Cost (Rupees)");
             costColumn.setCellValueFactory(data -> new SimpleDoubleProperty(data.getValue().getConsumptionAmount() * WATER_COST_PER_LITER).asObject());
-            costColumn.setPrefWidth(100); // Set preferred width
+            costColumn.setPrefWidth(140);
+            costColumn.setStyle("-fx-font-size: 14px;");
         
             // Add columns to TableView
             tableView.getColumns().addAll(householdColumn, dateColumn, consumptionColumn, costColumn);
         
-            // Limit the number of visible rows to 7
-            tableView.setFixedCellSize(25); // Adjust cell size if necessary
-            tableView.setPrefHeight(25 * 7 + 28); // 7 rows + header height (approx. 28px for header)
-        
-            // Apply CSS styling for a border
-            tableView.setStyle("-fx-border-color: black; -fx-border-width: 1; -fx-padding: 5;");
+            // More spacious row and header adjustments
+            tableView.setFixedCellSize(28);  // Spacious row height
+            tableView.setPrefHeight(28 * 7 + 28);  // 7 rows + header height
         }
         
         private void addRecord(String householdName, LocalDate date, String consumptionAmountStr) {
